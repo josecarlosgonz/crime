@@ -1,11 +1,14 @@
 #####################
 #======
-#Author Jose Gonzalez
+#Purpose: Create a shapefile with crime rates for all municipalities in Mexico
+#Author: Jose Gonzalez
 #Website: www.jose-gonzalez.org
+#Date: 17 Feb 2014
+#Copyright: Jose Gonzalez. All rights reserved
 
-#Crime analysis for Mexican municipalities
 
-#Download data from Diego Valle's blog 
+
+#Download data from Diego Valle's blog (Gracias Diego!)
 # Original data source: http://www.secretariadoejecutivo.gob.mx/es/SecretariadoEjecutivo/Incidencia_Delictiva
 #====
 library(R.utils) 
@@ -16,34 +19,46 @@ unlink(temp)
 
 
 #Total number of crimes 
-sum(data$count, na.rm=T)
+sum(data$count, na.rm=T) #1,157,425
 
 #This data set only contains a selected number of crimes
-#Ignore incomplete cases
-data  <- subset(data, is.na(data$count)== FALSE)
+#====
+names(data)
+unique(data[,c("crime","category","type","subtype")])
+#Check this image for mor info https://raw.github.com/josecarlosgonz/crime/master/images/selected_crimes.png
 
 #Add unique mun id
+#====
 data$mun_code  <- sprintf("%03d", data$mun_code)
 id  <- paste(data$state_code,data$mun_code,sep="")
 head(id); tail(id)
 data$id  <- id
 
-#stationality data
-
-
-str(data$month)
+#Charts
+#====
+require(ggplot2)
 data$date  <- paste(sprintf("%02d",data$month),data$year,sep="-")
 data$date  <- paste("01",data$date,sep="-")
 table(data$date)
 data$date  <- as.Date(data$date, "%d-%m-%Y")
-qplot(data$date, data$count)
-c <- ggplot(data, aes(date, count))
-c +
-d  <-  ggplot(data, aes(x=date, y=count)) + geom_line()
 
 
+#Chart for total number of crimes
+png("images/MonthlyCrimesSmooth.png")
+c <- ggplot(data, aes(date, count)) + stat_smooth()
+c + ggtitle("Number of selected crimes per municipality") +xlab("Month") + ylab("Number of selected crimes")  
+##Looks like the total number of monthly selected crimes per municipality is decreasing
+dev.off()
 
-#Crime rate for 2011-2013
+#Chart for number of homicides
+table(data$crime)
+png("images/homicidesSmooth.png")
+d <- ggplot(subset(data, data$crime=="HOMICIDIOS"), aes(date, count)) + stat_smooth()
+d + ggtitle("Number of homicides per municipality") +xlab("Month") + ylab("Number of homicides")  
+##Looks like the total number of homicides per municipality may be decreasing too
+dev.off()
+
+#Crime rates for 2011, 2012 and 2013
 crime <- ddply(data, c("id","date","population"), summarize,
                total = sum(count))
 crime$rate  <- (crime$total / crime$population)*1000
