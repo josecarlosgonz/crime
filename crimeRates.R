@@ -11,6 +11,7 @@
 #Download data from Diego Valle's blog (Gracias Diego!)
 # Original data source: http://www.secretariadoejecutivo.gob.mx/es/SecretariadoEjecutivo/Incidencia_Delictiva
 #====
+
 library(R.utils) 
 temp <- tempfile()
 download.file("http://crimenmexico.diegovalle.net/en/csv/fuero-comun-municipios.csv.gz",temp)
@@ -90,14 +91,11 @@ crime  <- melt(crime, id=c("id","year"), measured=c("total","rate"))
 table(crime$variable)
 
 
-#Reshape data from long to wide START HERE
+#Reshape data from long to wide
 head(crime)
-test  <- reshape(crime, timevar= "year", idvar=c("id","year"), direction="wide")
-test  <- cast(crime, id ~ variable + year, fun.aggregate=sum)
-test  <- as.data.frame(test)
-str(test)
-sum(test$total_2011) + sum(test$total_2012) + sum(test$total_2013) #Boom numbers are ok
-crime  <- test
+crime  <- cast(crime, id ~ variable + year)
+sum(crime$total_2011,na.rm=T) + sum(crime$total_2012,na.rm=T) + sum(crime$total_2013,na.rm=T) #Boom numbers are ok
+write.csv(crime, "crimesPerYear.csv", row.names=F)
 
 #Add crime rate for every year
 str(crime)
