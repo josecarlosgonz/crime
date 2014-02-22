@@ -26,6 +26,7 @@ sum(data$count, na.rm=T) #1,157,425
 #====
 names(data)
 unique(data[,c("crime","category","type","subtype")])
+head(data[data$subtype == "SIN DATOS",])
 #Check out this diagram for more info https://raw.github.com/josecarlosgonz/crime/master/images/selected_crimes.png
 
 #Add unique mun id
