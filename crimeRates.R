@@ -14,7 +14,7 @@
 library(R.utils) 
 temp <- tempfile()
 download.file("http://crimenmexico.diegovalle.net/en/csv/fuero-comun-municipios.csv.gz",temp)
-data <- read.csv(gunzip(temp, "fuero-comun-municipios.csv"))
+data <- read.csv(gunzip(temp, "fuero-comun-municipios.csvuero-comun-municipios.csv"))
 unlink(temp)
 
 
@@ -25,7 +25,7 @@ sum(data$count, na.rm=T) #1,157,425
 #====
 names(data)
 unique(data[,c("crime","category","type","subtype")])
-#Check this image for mor info https://raw.github.com/josecarlosgonz/crime/master/images/selected_crimes.png
+#Check out this diagram for more info https://raw.github.com/josecarlosgonz/crime/master/images/selected_crimes.png
 
 #Add unique mun id
 #====
@@ -59,35 +59,47 @@ d + ggtitle("Number of homicides per municipality") +xlab("Month") + ylab("Numbe
 dev.off()
 
 #Crime rates for 2011, 2012 and 2013
-crime <- ddply(data, c("id","date","population"), summarize,
-               total = sum(count))
-crime$rate  <- (crime$total / crime$population)*1000
-
-sum(crime$total)
-#crime  <- crime[,c(-3)]
-head(crime)
-table()
-ggplot(crime, aes(x=rate, y=date)) + geom_tile(aes(fill=crime)) 
-c <- ggplot(crime, aes(date, total))
-c + stat_smooth()
+#=====
+library(reshape)
+library(plyr)
+names(data)
 
 #Melt data
-crime <- ddply(data, c("id","year","population"), summarize,
-               total = sum(count))
+data  <- subset(data, is.na(data$count) ==FALSE)
+head(data)
+crime <- ddply(data, c("id","year"), summarize,
+               total = sum(count),
+               population = max(population))
+head(crime); tail(crime)
+sum(crime$total) #Total number of crimes match 1,157,425
+table(population$year) # We have slightly more data for 2013, 1,331 municipalities
+ddply(crime, c("year"), summarize, population = prettyNum(sum(population), big.mark =",")) # Population estimates around 107 million look ok
+#Calculate crime rate per 100 k people
 crime$rate  <- (crime$total / crime$population)*1000
-sum(crime$total)
+summary(crime$rate)
+qplot(crime$rate, crime$year) # who is the outlier?
+head(data[data$id == 12037,]) #Looks like a ton of crimes for a population around 6k. 
+crime[crime$rate >60,] #Ixcateopan de Cuauhtemoc in Guerrero. 449 crimes are too much for a population of 6k.
 
-crime  <- melt(crime, id=c("id","year"), measured=c("total","rate"))
+#Change data format from long to wide
+#======
 head(crime)
-str(crime)
-#Cast data from long to wide
+head(data)
+#Melt data
+crime  <- melt(crime, id=c("id","year"), measured=c("total","rate"))
+table(crime$variable)
+
+
+#Reshape data from long to wide START HERE
+head(crime)
+test  <- reshape(crime, timevar= "year", idvar=c("id","year"), direction="wide")
 test  <- cast(crime, id ~ variable + year, fun.aggregate=sum)
 test  <- as.data.frame(test)
 str(test)
 sum(test$total_2011) + sum(test$total_2012) + sum(test$total_2013) #Boom numbers are ok
 crime  <- test
 
-#Match formatting for both IDs
+#Add crime rate for every year
 str(crime)
 names(crime)
 summary(crime$rate_2013)
@@ -96,9 +108,4 @@ summary(crime$rate_2011)
 crime$chR13  <- crime[,10] -crime[,9]
 crime$chR12  <- crime[,9] -crime[,8]
 qplot(crime$chR13, crime$chR12)
-
-#File gets corrupted with the steps below will try qgis
-#====
-getwd()
-write.csv(crime,"~/Dropbox/Blog/crimeStatistics/crimeRates.csv",row.names=F,fileEncoding="latin1")
 

@@ -1,0 +1,37 @@
+library(shiny)
+runExample("02_text")
+library(foreign)
+list.files()
+temp <- read.dbf("crimeAndPoverty.dbf", as.is=T)
+names(temp)
+temp <- temp[,c(-5,-6,-8,-9,-13:-55)]
+names(temp)
+write.dbf(temp,"crimeAndPoverty.dbf")
+str(temp)
+library(plyr)
+data  <- temp
+str(data)
+names(data)
+cols  <- c(6:16)
+cols  <- c(6:16)
+data[,cols] <- apply(data[,cols], 2, function(x) gsub(",","",x))
+data[,cols] <- apply(data[,cols], 2, function(x) as.numeric(x))
+data[,cols] <- apply(data[,cols], 2, function(x) signif(x, digits=2))
+str(data)
+write.dbf(temp,"crimeAndPoverty.dbf")
+str(data)
+write.dbf(temp,"crimeAndPoverty.dbf")
+temp <- read.dbf("crimeAndPoverty.dbf", as.is=T)
+str(temp)
+data  <- temp
+names(data)
+str(data)
+names(data)
+cols  <- c(6:16)#
+data[,cols] <- apply(data[,cols], 2, function(x) gsub(",","",x))#
+data[,cols] <- apply(data[,cols], 2, function(x) as.numeric(x))#
+#Round up numbers#
+#
+data[,cols] <- apply(data[,cols], 2, function(x) signif(x, digits=2))#
+str(data)
+write.dbf(data,"crimeAndPoverty.dbf")
