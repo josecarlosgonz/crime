@@ -8,14 +8,14 @@
 
 
 
-#Download data from Diego Valle's blog (Gracias Diego!)
+#Download data from Diego Valle's blog (Gracias Diego!) http://crimenmexico.diegovalle.net/en/csv/
 # Original data source: http://www.secretariadoejecutivo.gob.mx/es/SecretariadoEjecutivo/Incidencia_Delictiva
 #====
 
-library(R.utils) 
+require(R.utils) 
 temp <- tempfile()
 download.file("http://crimenmexico.diegovalle.net/en/csv/fuero-comun-municipios.csv.gz",temp)
-data <- read.csv(gunzip(temp, "fuero-comun-municipios.csvuero-comun-municipios.csv"))
+data <- read.csv(gunzip(temp, "fuero-comun-municipios.csvuero-comun-municipios.csv",overwrite=T))
 unlink(temp)
 
 
@@ -31,7 +31,7 @@ head(data[data$subtype == "SIN DATOS",])
 
 #Add unique mun id
 #====
-data$mun_code  <- sprintf("%03d", data$mun_code)
+data$mun_code  <- sprintf("%03s", data$mun_code)
 id  <- paste(data$state_code,data$mun_code,sep="")
 head(id); tail(id)
 data$id  <- id
@@ -67,13 +67,14 @@ library(plyr)
 names(data)
 
 #Melt data
-#data  <- subset(data, is.na(data$count) ==FALSE)
+data  <- subset(data, is.na(data$count) ==FALSE)
 head(data)
-crime <- ddply(data, c("id","year"), summarize,
+crime <- ddply(data, c("id","state_code","year"), summarize,
                total = sum(count),
                population = max(population))
 head(crime); tail(crime)
-sum(crime$total) #Total number of crimes match 1,157,425
+sum(data$count, na.rm=T)
+sum(crime$total, na.rm=T) #Total number of crimes match 1,157,425
 table(population$year) # We have slightly more data for 2013, 1,331 municipalities
 ddply(crime, c("year"), summarize, population = prettyNum(sum(population), big.mark =",")) # Population estimates around 107 million look ok
 #Calculate crime rate per 100 k people
@@ -88,18 +89,18 @@ crime[crime$rate >60,] #Ixcateopan de Cuauhtemoc in Guerrero. 449 crimes are too
 head(crime)
 head(data)
 #Melt data
-crime  <- melt(crime, id=c("id","year"), measured=c("total","rate"))
+crime  <- melt(crime, id=c("id","state_code","year"), measured=c("total","rate"))
 table(crime$variable)
 
 #Reshape data from long to wide
 head(crime)
-crime  <- cast(crime, id ~ variable + year)
+crime  <- cast(crime, id + state_code ~ variable + year)
 sum(crime$total_2011,na.rm=T) + sum(crime$total_2012,na.rm=T) + sum(crime$total_2013,na.rm=T) #Boom numbers are ok
 
 
 #Format numbers
 head(crime); names(crime)
-cols  <- c(8:10)
+cols  <- c(8:11)
 crime[,cols] <- apply(crime[,cols], 2, function(x) signif(x, digits=2))
 crime[is.na(crime)]  <- 0
 head(crime)
