@@ -66,7 +66,7 @@ library(plyr)
 names(data)
 
 #Melt data
-data  <- subset(data, is.na(data$count) ==FALSE)
+#data  <- subset(data, is.na(data$count) ==FALSE)
 head(data)
 crime <- ddply(data, c("id","year"), summarize,
                total = sum(count),
@@ -90,20 +90,16 @@ head(data)
 crime  <- melt(crime, id=c("id","year"), measured=c("total","rate"))
 table(crime$variable)
 
-
 #Reshape data from long to wide
 head(crime)
 crime  <- cast(crime, id ~ variable + year)
 sum(crime$total_2011,na.rm=T) + sum(crime$total_2012,na.rm=T) + sum(crime$total_2013,na.rm=T) #Boom numbers are ok
+
+
+#Format numbers
+head(crime); names(crime)
+cols  <- c(8:10)
+crime[,cols] <- apply(crime[,cols], 2, function(x) signif(x, digits=2))
+crime[is.na(crime)]  <- 0
+head(crime)
 write.csv(crime, "crimesPerYear.csv", row.names=F)
-
-#Add crime rate for every year
-str(crime)
-names(crime)
-summary(crime$rate_2013)
-summary(crime$rate_2012)
-summary(crime$rate_2011)
-crime$chR13  <- crime[,10] -crime[,9]
-crime$chR12  <- crime[,9] -crime[,8]
-qplot(crime$chR13, crime$chR12)
-
