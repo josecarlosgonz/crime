@@ -13,20 +13,36 @@
 homicides  <- read.csv("homicidesPerYear.csv")
 crime  <- read.csv("crimesPerYear.csv")
 head(crime)
-head(homicides)
-str(crime)
-str(homicides)
-data  <- merge()
+homicides  <- homicides[,c(-2,-6:-8)]
+names
+names(homicides)  <- c("id","h2011","h2012","h2013","rh2011","rh2012","rh2013")
+names(homicides)
 
-#Due to file encoding issues the 
+data  <- merge(crime,homicides, by="id",all=T)
+str(crime)
+str(data)
+length(unique(data$id))
+getwd()
+write.csv(data, "crimestats.csv", row.names=F)
+write
+#The file gets corrupted when mergin in R so I used QGIS
 #====
 
+#Change string fields to numeric in shapefile
+#====
+
+
 library(foreign)
-poverty  <- read.dbf("shapefiles/crimeAndPoverty.dbf", as.is=T)
-write.dbf(poverty, "shapefiles/crimeAndPoverty.dbf")
-head(poverty)
 names(poverty)
+cols  <- c(5:22)
+poverty  <- read.dbf("shapefiles/crimestats.dbf", as.is=T)
+names(poverty)
+poverty[,cols] <- apply(poverty[,cols], 2, function(x) gsub(",","",x))
+poverty[,cols] <- apply(poverty[,cols], 2, function(x) as.numeric(x))
+#Round up numbers
 
-data  <-
-
+poverty[,cols] <- apply(poverty[,cols], 2, function(x) signif(x, digits=2))
+str(data)
+write.dbf(data,"shapefiles/crimestats.dbf")
+#Check if crimes have increased or decreased
 
